@@ -1,0 +1,100 @@
+{
+  "name": "MREID - Currency Exchange Rates (USD/EUR)",
+  "nodes": [
+    {
+      "parameters": {},
+      "type": "n8n-nodes-base.manualTrigger",
+      "typeVersion": 1,
+      "position": [0, 0],
+      "id": "eaf6cbcf-5fa1-4ae4-a3c6-476cd8113343",
+      "name": "When clicking 'Execute workflow'"
+    },
+    {
+      "parameters": {
+        "url": "https://api.currencyapi.com/v3/historical?apikey=YOUR_API_KEY_HERE&currencies=EUR%2CUSD&date=2010-12-31",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.3,
+      "position": [208, 0],
+      "id": "7747e877-59cc-4d08-bf2b-9b9067fc4475",
+      "name": "HTTP Request"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Extrae la fecha y el tipo de cambio EUR/USD de la respuesta de currencyapi.com\n// La API devuelve los valores con base USD=1\nconst arrayOfRows = [];\nconst date     = items[0].json.meta.last_updated_at.slice(0, 10);\nconst eurValue = items[0].json.data.EUR.value;\narrayOfRows.push({ date: date, usd: 1, eur: eurValue });\nreturn arrayOfRows;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [416, 0],
+      "id": "9fd2353f-464c-4c5c-831e-63677c94a6de",
+      "name": "Code in JavaScript"
+    },
+    {
+      "parameters": {
+        "operation": "upsert",
+        "table": {
+          "__rl": true,
+          "value": "currency_exchange_rates",
+          "mode": "list",
+          "cachedResultName": "currency_exchange_rates"
+        },
+        "columnToMatchOn": "date",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.mySql",
+      "typeVersion": 2.5,
+      "position": [624, 0],
+      "id": "547d7add-6da2-4e22-bf27-c2cca95f3327",
+      "name": "Insert or update rows in a table",
+      "credentials": {
+        "mySql": {
+          "id": "nhnOVBXehiC7gSEv",
+          "name": "MySQL account"
+        }
+      }
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When clicking 'Execute workflow'": {
+      "main": [
+        [
+          {
+            "node": "HTTP Request",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "HTTP Request": {
+      "main": [
+        [
+          {
+            "node": "Code in JavaScript",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code in JavaScript": {
+      "main": [
+        [
+          {
+            "node": "Insert or update rows in a table",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1",
+    "availableInMCP": false
+  },
+  "tags": []
+}
